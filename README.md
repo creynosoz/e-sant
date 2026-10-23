@@ -66,10 +66,20 @@ Genera **un único archivo** `dist/index.html` con todo el JS y CSS embebido. Se
 
 ## Estructura
 
-- `src/domain/sifere.ts` — dominio puro: parseo, validación (CUIT módulo 11, fechas, importes),
-  armado de registros. `RecordFormat` permite agregar el Formato Nº 1 (79 caracteres)
-  implementando la misma interfaz.
-- `src/domain/jurisdicciones.ts` — códigos 901–924.
-- `src/io/readExcel.ts` — lectura con SheetJS y normalización (serial de Excel → fecha,
-  importes → centavos).
-- `src/components/` — UI React.
+El sitio (e-sant) es una home con tiles que lleva a cada herramienta. El ruteo es por hash
+(`#/`, `#/sifere-retenciones`) para que funcione desde `file://` y en hosting estático.
+
+- `src/App.tsx` — shell del sitio: barra superior y ruteo a la home o a una herramienta.
+- `src/router.ts` — hook `useRoute()` sobre `location.hash`.
+- `src/home/Home.tsx` — home con un tile por herramienta.
+- `src/tools/registry.ts` — lista de herramientas `TOOLS` (id/ruta, título, descripción, componente).
+  Para sumar una herramienta: crear `src/tools/<id>/` y registrarla acá.
+- `src/tools/sifere-retenciones/` — conversor de retenciones a SIFERE WEB:
+  - `SifereRetenciones.tsx` — pantalla principal.
+  - `domain/sifere.ts` — dominio puro: parseo, validación (CUIT módulo 11, fechas, importes),
+    armado de registros. `RecordFormat` permite agregar el Formato Nº 1 (79 caracteres)
+    implementando la misma interfaz.
+  - `domain/jurisdicciones.ts` — códigos 901–924.
+  - `io/readExcel.ts` — lectura con SheetJS y normalización (serial de Excel → fecha,
+    importes → centavos).
+  - `components/` — UI React.
