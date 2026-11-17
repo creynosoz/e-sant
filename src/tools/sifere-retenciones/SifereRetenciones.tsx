@@ -2,9 +2,11 @@ import { useMemo, useState } from 'react';
 import {
   buildArchivo,
   buildRecord,
+  esPercepcion,
   nombreArchivo,
   parseRow,
   resumen,
+  sinPercepciones,
   validateConfig,
   validateRetenciones,
   type CampoEditable,
@@ -40,16 +42,24 @@ export default function SifereRetenciones() {
   const [nombreExcel, setNombreExcel] = useState<string | null>(null);
   const [errorCarga, setErrorCarga] = useState<string | null>(null);
   const [verRaw, setVerRaw] = useState(false);
+  const [filtrarPercepciones, setFiltrarPercepciones] = useState(true);
 
-  const validaciones = useMemo(() => validateRetenciones(rows, config), [rows, config]);
+  const cantidadPercepciones = useMemo(() => rows.filter(esPercepcion).length, [rows]);
+  // Filas que van al archivo: todas, o solo las retenciones si se filtran las percepciones.
+  const visibles = useMemo(
+    () => (filtrarPercepciones ? sinPercepciones(rows) : rows),
+    [rows, filtrarPercepciones],
+  );
+
+  const validaciones = useMemo(() => validateRetenciones(visibles, config), [visibles, config]);
   const erroresConfig = useMemo(() => validateConfig(config), [config]);
-  const filasConError = rows.filter((r) => validaciones.get(r.id)!.errores.length > 0).length;
-  const filasConAdvertencia = rows.filter((r) => validaciones.get(r.id)!.advertencias.length > 0).length;
-  const puedeDescargar = rows.length > 0 && filasConError === 0 && erroresConfig.length === 0;
+  const filasConError = visibles.filter((r) => validaciones.get(r.id)!.errores.length > 0).length;
+  const filasConAdvertencia = visibles.filter((r) => validaciones.get(r.id)!.advertencias.length > 0).length;
+  const puedeDescargar = visibles.length > 0 && filasConError === 0 && erroresConfig.length === 0;
 
   const lineas = useMemo(
     () =>
-      rows.map((r) => {
+      visibles.map((r) => {
         if (erroresConfig.length || validaciones.get(r.id)!.errores.length) return null;
         try {
           return buildRecord(r, config);
@@ -57,7 +67,7 @@ export default function SifereRetenciones() {
           return null;
         }
       }),
-    [rows, config, validaciones, erroresConfig],
+    [visibles, config, validaciones, erroresConfig],
   );
 
   async function cargarArchivo(file: File) {
@@ -108,8 +118,26 @@ export default function SifereRetenciones() {
 
       {rows.length > 0 && (
         <>
+          {cantidadPercepciones > 0 && (
+            <div className="filtro-operacion">
+              <label className="toggle">
+                <input
+                  type="checkbox"
+                  checked={filtrarPercepciones}
+                  onChange={(e) => setFiltrarPercepciones(e.target.checked)}
+                />
+                Filtrar percepciones
+              </label>
+              <span className="muted">
+                {filtrarPercepciones
+                  ? `Se excluyen ${cantidadPercepciones} percepci${cantidadPercepciones === 1 ? 'ón' : 'ones'} del archivo; solo se exportan las retenciones.`
+                  : `El archivo incluye ${cantidadPercepciones} percepci${cantidadPercepciones === 1 ? 'ón' : 'ones'}.`}
+              </span>
+            </div>
+          )}
+
           <Summary
-            datos={resumen(rows)}
+            datos={resumen(visibles)}
             filasConError={filasConError}
             filasConAdvertencia={filasConAdvertencia}
           />
@@ -118,14 +146,16 @@ export default function SifereRetenciones() {
             <button
               className="btn btn-primary"
               disabled={!puedeDescargar}
-              onClick={() => descargar(buildArchivo(rows, config), nombreArchivo(rows, config))}
+              onClick={() => descargar(buildArchivo(visibles, config), nombreArchivo(visibles, config))}
             >
               Descargar .txt
             </button>
             <span className="muted">
               {puedeDescargar
-                ? nombreArchivo(rows, config)
-                : `Corregí ${filasConError || 'los'} error${filasConError === 1 ? '' : 'es'} para habilitar la descarga`}
+                ? nombreArchivo(visibles, config)
+                : visibles.length === 0
+                  ? 'No quedan retenciones para exportar'
+                  : `Corregí ${filasConError || 'los'} error${filasConError === 1 ? '' : 'es'} para habilitar la descarga`}
             </span>
             <label className="toggle">
               <input type="checkbox" checked={verRaw} onChange={(e) => setVerRaw(e.target.checked)} />
@@ -133,10 +163,10 @@ export default function SifereRetenciones() {
             </label>
           </div>
 
-          {verRaw && <RawView lineas={lineas} filas={rows.map((r) => r.fila)} />}
+          {verRaw && <RawView lineas={lineas} filas={visibles.map((r) => r.fila)} />}
 
           <PreviewTable
-            rows={rows}
+            rows={visibles}
             config={config}
             validaciones={validaciones}
             onEdit={editarCampo}

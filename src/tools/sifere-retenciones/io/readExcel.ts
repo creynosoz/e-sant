@@ -20,6 +20,8 @@ export class ExcelError extends Error {
 
 function normalizarEncabezado(valor: unknown): string {
   return String(valor ?? '')
+    // Algunos sistemas exportan "Excel" que en realidad es HTML, con encabezados como "Operaci&oacute;n".
+    .replace(/&([a-z])(acute|grave|uml|circ|tilde);/gi, '$1')
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
     .trim()
@@ -49,7 +51,8 @@ function esVacio(valor: unknown): boolean {
 
 /**
  * Lee la primera hoja del Excel. Fila 1 = encabezados `Cuit | Fecha | Comprobante | Importe`
- * (en cualquier orden, sin distinguir mayúsculas ni acentos). Ignora filas vacías.
+ * (en cualquier orden, sin distinguir mayúsculas ni acentos), más una columna opcional `Operación`
+ * (Retención / Percepción). Ignora filas vacías.
  */
 export function readExcel(data: ArrayBuffer | Uint8Array): FilaExcel[] {
   let wb: XLSX.WorkBook;
@@ -78,6 +81,7 @@ export function readExcel(data: ArrayBuffer | Uint8Array): FilaExcel[] {
     if (i < 0) faltantes.push(col[0].toUpperCase() + col.slice(1));
     indices[col] = i;
   }
+  const indiceOperacion = encabezados.indexOf('operacion');
   if (faltantes.length) {
     throw new ExcelError(
       `Faltan columnas en la fila 1: ${faltantes.join(', ')}. Se esperan: Cuit | Fecha | Comprobante | Importe.`,
@@ -96,6 +100,7 @@ export function readExcel(data: ArrayBuffer | Uint8Array): FilaExcel[] {
       comprobante: texto(valor('comprobante')),
       importeCentavos: parseImporte(valor('importe')),
       importeTexto: texto(valor('importe')),
+      operacion: indiceOperacion < 0 ? '' : texto(celdas?.[indiceOperacion]),
     });
   });
   return filas;

@@ -44,6 +44,8 @@ export interface FilaExcel {
   comprobante: string;
   importeCentavos: bigint | null;
   importeTexto: string;
+  /** Texto de la columna opcional "Operación" (p. ej. "Retención" / "Percepción"); '' si no existe. */
+  operacion: string;
 }
 
 /** Campos que el usuario puede editar por fila. Se guardan como texto tal cual se tipean. */
@@ -65,6 +67,7 @@ export interface Retencion {
   comprobante: string;
   importeCentavos: bigint | null;
   importeTexto: string;
+  operacion: string;
   /** Valores inferidos del texto del comprobante. */
   derivados: Pick<CamposEditables, 'constancia' | 'tipo' | 'comprobanteOriginal'>;
   /** Valores editados a mano por el usuario (pisan derivados y defaults). */
@@ -321,9 +324,25 @@ export function parseRow(fila: FilaExcel): Retencion {
     comprobante: fila.comprobante,
     importeCentavos: fila.importeCentavos,
     importeTexto: fila.importeTexto,
+    operacion: fila.operacion,
     derivados: { constancia: numero, tipo, comprobanteOriginal: numero },
     overrides: {},
   };
+}
+
+/** True si la columna "Operación" de la fila indica una percepción (sin importar mayúsculas/acentos). */
+export function esPercepcion(r: Pick<Retencion, 'operacion'>): boolean {
+  return r.operacion
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase()
+    .startsWith('percep');
+}
+
+/** Filas que no son percepciones. */
+export function sinPercepciones<T extends Pick<Retencion, 'operacion'>>(rows: readonly T[]): T[] {
+  return rows.filter((r) => !esPercepcion(r));
 }
 
 /** Valores efectivos de los campos editables: override > derivado > default global. */
