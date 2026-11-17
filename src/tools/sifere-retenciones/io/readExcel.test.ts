@@ -64,6 +64,18 @@ describe('readExcel', () => {
     });
   });
 
+  it('lee la columna opcional Operación, aunque venga con entidades HTML', () => {
+    const filas = readExcel(
+      libro([
+        ['Cuit', 'Operaci&oacute;n', 'Fecha', 'Comprobante', 'Importe'],
+        [30651193369, 'Retención', '01/10/2026', 'Orden de pago 1', 100],
+        [30587053221, 'Percepción', '01/10/2026', 'Factura 2', 200],
+      ]),
+    );
+    expect(filas.map((f) => f.operacion)).toEqual(['Retención', 'Percepción']);
+    expect(readExcel(libro([['Cuit', 'Fecha', 'Comprobante', 'Importe'], [1, 2, 'x', 3]]))[0].operacion).toBe('');
+  });
+
   it('informa columnas faltantes', () => {
     expect(() => readExcel(libro([['Cuit', 'Fecha'], [1, 2]]))).toThrow(ExcelError);
     expect(() => readExcel(libro([['Cuit', 'Fecha'], [1, 2]]))).toThrow(/Comprobante, Importe/);

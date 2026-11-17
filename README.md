@@ -29,6 +29,10 @@ Primera hoja, fila 1 con encabezados (cualquier orden, sin importar mayúsculas/
 
 Las filas vacías se ignoran.
 
+Columna opcional **Operación** (`Retención` / `Percepción`): si el Excel trae percepciones,
+aparece el checkbox **Filtrar percepciones** (activado por defecto) para exportar solo las
+retenciones.
+
 ## Formato de salida (Formato Nº 2)
 
 Un registro por línea, 90 caracteres, ASCII, CRLF, sin encabezado:

@@ -319,6 +319,14 @@ details summary {
   cursor: pointer;
 }
 
+.filtro-operacion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin-bottom: 12px;
+}
+
 .actions .toggle {
   margin-left: auto;
 }

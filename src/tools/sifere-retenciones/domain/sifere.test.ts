@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildArchivo,
   buildRecord,
+  esPercepcion,
   extractNumero,
   formatCuit,
   formatImporte,
@@ -11,6 +12,7 @@ import {
   parseImporte,
   parseRow,
   resumen,
+  sinPercepciones,
   validateCuit,
   validateRetenciones,
   ValidationError,
@@ -28,6 +30,7 @@ function retencion(cuit: string, fecha: string, comprobante: string, importe: un
     comprobante,
     importeCentavos: parseImporte(importe),
     importeTexto: String(importe),
+    operacion: '',
   });
 }
 
@@ -217,5 +220,22 @@ describe('resumen', () => {
       { cuit: '30999003156', cantidad: 1, totalCentavos: 500n },
       { cuit: '30597355919', cantidad: 2, totalCentavos: 30n },
     ]);
+  });
+});
+
+describe('percepciones', () => {
+  it('detecta percepciones por la columna Operación', () => {
+    expect(esPercepcion({ operacion: 'Percepción' })).toBe(true);
+    expect(esPercepcion({ operacion: ' PERCEPCION ' })).toBe(true);
+    expect(esPercepcion({ operacion: 'Retención' })).toBe(false);
+    expect(esPercepcion({ operacion: '' })).toBe(false);
+  });
+
+  it('sinPercepciones deja solo las retenciones', () => {
+    const rows = ['Retención', 'Percepción', '', 'Retención'].map((operacion, i) => ({
+      ...retencion('30597355919', '04/09/2026', 'Factura 1', 100, i + 2),
+      operacion,
+    }));
+    expect(sinPercepciones(rows).map((r) => r.fila)).toEqual([2, 4, 5]);
   });
 });
