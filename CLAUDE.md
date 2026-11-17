@@ -76,9 +76,12 @@ src/
 
 ## Conventions
 
-- **Code and comments in English** (identifiers, comments, test names). Only user-facing UI
-  text is in Spanish (es-AR, voseo: "Elegí", "Corregí"). Commit messages are in English,
-  conventional-commit style (`feat: ...`).
+- **All code is always in English**: identifiers, comments, test names, file names, log and
+  error messages meant for developers. No exceptions.
+- **User-facing text varies per case**: it may be English, Spanish, or both. Decide it with the
+  user for each tool or screen; don't assume. When it is Spanish, use es-AR with voseo
+  ("Elegí", "Corregí"). The existing `sifere-retenciones` UI is in Spanish.
+- Commit messages are in English, conventional-commit style (`feat: ...`).
 - Money is handled as **integer centavos with `BigInt`** and half-up rounding — never floats.
 - Keep domain logic pure and covered by Vitest tests next to the source (`*.test.ts`).
 - Any `localStorage` access goes through try/catch and must degrade gracefully.
